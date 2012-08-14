@@ -1,0 +1,92 @@
+#!/bin/sh
+#
+# hipache        init file for starting up the hipache daemon
+#
+# chkconfig:   - 20 80
+# description: Starts and stops the hipache daemon.
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+name="hipache"
+app_file="/opt/hipache/app.js"
+nodejs="/usr/bin/node"
+log_file="/var/log/hipache_stdout.log"
+exec="$nodejs /opt/hipache/app.js 1>$log_file 2>&1 &"
+pidfile="/var/run/hipache.pid"
+
+[ -e /etc/sysconfig/hipache ] && . /etc/sysconfig/hipache
+
+lockfile=/var/lock/subsys/hipache
+
+start() {
+    [ -x $nodejs ] || exit 5
+    echo -n $"Starting $name: "
+    daemon --user root --pidfile=$pidfile  "$exec"
+    sleep 5
+    echo
+    status -p $pidfile $name
+    retval=$?
+    echo
+    [ $retval -eq 0 ] && touch $lockfile
+    return $retval
+}
+
+stop() {
+    echo -n $"Stopping $name: "
+    killproc -p $pidfile $name
+    retval=$?
+    echo
+    [ $retval -eq 0 ] && rm -f $lockfile
+    return $retval
+}
+
+restart() {
+    stop
+    start
+}
+
+reload() {
+    false
+}
+
+rh_status() {
+    status -p $pidfile $name
+}
+
+rh_status_q() {
+    rh_status >/dev/null 2>&1
+}
+
+
+case "$1" in
+    start)
+        rh_status_q && exit 0
+        $1
+        ;;
+    stop)
+        rh_status_q || exit 0
+        $1
+        ;;
+    restart)
+        $1
+        ;;
+    reload)
+        rh_status_q || exit 7
+        $1
+        ;;
+    force-reload)
+        force_reload
+        ;;
+    status)
+        rh_status
+        ;;
+    condrestart|try-restart)
+        rh_status_q || exit 0
+        restart
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart}"
+        exit 2
+esac
+exit $?

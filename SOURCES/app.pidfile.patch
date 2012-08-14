@@ -1,0 +1,12 @@
+--- hipache-0.0.1/app.js	2012-08-13 12:01:04.760726849 -0700
++++ hipache-0.0.1-p/app.js	2012-08-13 12:01:04.775726618 -0700
+@@ -22,6 +22,9 @@ var config = (function (path) {
+ if (cluster.isMaster) {
+     // Run the master
+     master(config);
++    fs.writeFile(config.server.pidFile, process.pid, function (err) {
++   	if (err) throw err;
++    });
+     util.log('Server is running. ' + JSON.stringify(config.server));
+ } else {
+     // Run the worker
